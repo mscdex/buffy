@@ -67,3 +67,5 @@ _Methods_
 * **append**(Buffer:newBuffer) - _(void)_ - Appends the given Buffer to the end of the Buffy.
 
 * **GCBefore**(Integer:index) - _Integer:bytesRemoved_ - Removes any Buffers stored before the given Buffy index.
+
+* **toString**([String:encoding], [Integer:startIndex], [Integer:endIndex]) - _String:result_ - Decodes and returns a string with the specified encoding beginning at startIndex and ending at endIndex.

@@ -52,7 +52,24 @@ Buffy.prototype.indexOf = function(bytes, start) {
   }
   return ret;
 };
-
+Buffy.prototype.GCBefore = function(index) {
+  if (index < 0 || index >= this._length)
+    throw new Error('OOB');
+  var toRemove = 0, amount = 0;
+  for (var bn=0,i=0,len=this._store.length; bn<len; ++bn) {
+    if (bn > 0) {
+      amount += this._store[bn-1].length;
+      this._length -= this._store[bn-1].length;
+      ++toRemove;
+    }
+    i += this._store[bn].length;
+    if (index < i)
+      break;
+  }
+  if (toRemove > 0)
+    this._store.splice(0, toRemove);
+  return amount;
+};
 Buffy.prototype.copy = function(destBuffer, destStart, srcStart, srcEnd) {
   if (typeof srcEnd === 'undefined')
     srcEnd = this._length;
@@ -62,43 +79,98 @@ Buffy.prototype.copy = function(destBuffer, destStart, srcStart, srcEnd) {
       || srcStart > srcEnd || destStart + (srcEnd-srcStart) > destBuffer.length)
     throw new Error('OOB');
   if (srcStart !== srcEnd) {
-    var foundStart = false, bn = 0, totalBytes = (srcEnd-srcStart+1),
-        doExit = false, numbufs = this._store.length, buflen, bufpos = destStart,
-        i;
-    while (bn < numbufs) {
-      i = 0;
+    var foundStart = false, totalBytes = (srcEnd-srcStart)+1,
+        buflen, destPos = destStart;
+    for (var bn=0,len=this._store.length; bn<len; ++bn) {
       buflen = this._store[bn].length;
       if (!foundStart) {
         if (srcStart >= buflen)
           srcStart -= buflen;
-        else {
-          i = srcStart;
+        else
           foundStart = true;
-        }
       }
       if (foundStart) {
-        if ((totalBytes - bufpos) <= (buflen - i)) {
-          this._store[bn].copy(destBuffer, bufpos, i, totalBytes - bufpos);
-          bufpos += (totalBytes - bufpos);
+        if ((totalBytes - destPos) <= (buflen - srcStart)) {
+          this._store[bn].copy(destBuffer, destPos, srcStart, srcStart + (totalBytes - destPos));
           break;
         } else {
-          this._store[bn].copy(destBuffer, bufpos, i, buflen);
-          bufpos += (buflen - i);
+          this._store[bn].copy(destBuffer, destPos, srcStart, buflen);
+          destPos += (buflen - srcStart);
+          srcStart = 0;
         }
       }
-      ++bn;
     }
   }
 };
 Buffy.prototype.splice = function(index, howmany, el) {
-  if (index >= this._length || (index + howmany) >= this._length)
+  var idxLastDel = index + howmany, idxLastAdd = index,
+      numNew = 0, newEls, idxRet = 0;
+  if (index < 0 || index >= this._length || howmany < 0 || idxLastDel >= this._length)
     throw new Error('OOB');
-  throw new Error('Not implemented');
+  if (el) {
+    newEls = Array.prototype.slice.call(arguments).slice(2);
+    numNew = newEls.length;
+    idxLastAdd = index + numNew;
+  }
+  var idxLastMin = Math.min(idxLastAdd, idxLastDel),
+      idxLastMax = Math.max(idxLastAdd, idxLastDel);
+  var ret = new Array(howmany);
+  if (numNew === howmany) {
+    for (var bn=0,i=0,blen,start=-1,len=this._store.length; bn<len; ++bn) {
+      blen = this._store[bn].length;
+      if (start < 0) {
+        i += blen;
+        if (index < i)
+          start = blen-(i-index);
+      } else {
+        for (var j=start; j<blen; ++j,++index) {
+          if (index === idxLastAdd)
+            return ret;
+          ret[idxRet] = this._store[bn][j];
+          this._store[bn][j] = newEls[idxRet++];
+        }
+        start = 0;
+      }
+    }
+  } else {
+    
+  }
+  return ret;
 };
 Buffy.prototype.__defineGetter__('length', function() {
   return this._length;
 });
-Buffy.prototype.toString = function() {
+Buffy.prototype.get = function(index) {
+  var ret = false;
+  if (index >= 0 && index < this._length) {
+    for (var bn=0,i=0,blen,len=this._store.length; bn<len; ++bn) {
+      blen = this._store[bn].length
+      i += blen;
+      if (index < i) {
+        ret = this._store[bn][blen-(i-index)];
+        break;
+      }
+    }
+  }
+  return ret;
+};
+Buffy.prototype.set = function(index, value) {
+  var ret = false;
+  if (index >= 0 && index < this._length && typeof value === 'number'
+      && value >= 0 && value <= 255) {
+    for (var bn=0,i=0,blen,len=this._store.length; bn<len; ++bn) {
+      blen = this._store[bn].length
+      i += blen;
+      if (index < i) {
+        this._store[bn][blen-(i-index)] = value;
+        ret = true;
+        break;
+      }
+    }
+  }
+  return ret;
+};
+Buffy.prototype.toString = function(encoding, start, end) {
   var ret = '';
   for (var i=0,len=this._store.length; i<len; ++i)
     ret += this._store[i].toString();

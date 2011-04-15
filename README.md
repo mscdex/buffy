@@ -56,9 +56,14 @@ _Methods_
 
 * **(constructor)**() - Creates and returns a new instance of a Buffy object.
 
+* **get**(Integer:index) - _Boolean/Integer:byte_ - Retrieves a single byte at the specified index. If the index is invalid, Boolean false is returned.
+
+* **set**(Integer:index, Integer:newByteValue) - _Boolean:success_ - Sets the byte at the specified index to the given value.
+
 * **indexOf**(Array:bytes, [Integer:start=0]) - _Integer:position_ - Searches for the specified bytes in the Buffy at an optional starting position. Returns -1 if the bytes were not found.
 
 * **copy**(Buffer:destBuffer, [Integer:destStart=0], [Integer:sourceStart=0], [Integer:sourceEnd=buffy.length]) - _(void)_ - Works similar to Buffer's copy().
 
 * **append**(Buffer:newBuffer) - _(void)_ - Appends the given Buffer to the end of the Buffy.
 
+* **GCBefore**(Integer:index) - _Integer:bytesRemoved_ - Removes any Buffers stored before the given Buffy index.

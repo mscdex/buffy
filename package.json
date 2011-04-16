@@ -1,5 +1,5 @@
 { "name": "buffy",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Brian White <mscdex@mscdex.net>",
   "description": "Manage and manipulate multiple node.js Buffers as if they were one continuous Buffer",
   "main": "./buffy",
